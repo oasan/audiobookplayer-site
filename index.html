@@ -1,78 +1,778 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-palette="warm" data-bg="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Аудиокниги — плеер для Android</title>
-<meta name="description" content="Плеер аудиокниг для Android: слушайте книги из своей папки. Без интернета, рекламы и аналитики.">
-<link rel="icon" type="image/webp" href="assets/icon.webp">
-<link rel="stylesheet" href="assets/style.css">
+<meta name="description" content="Плеер для аудиокниг, которые уже лежат у вас в телефоне. Папка — это библиотека. Без аккаунтов, интернета и подписки.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23C0562B'/%3E%3Crect x='11' y='22' width='7' height='30' rx='2' fill='%23FDF3E6'/%3E%3Crect x='21' y='17' width='8' height='35' rx='2' fill='%23FDF3E6'/%3E%3Crect x='32' y='12' width='8' height='40' rx='2' fill='%23F4A86A'/%3E%3Cpath d='M45 24 L56 32 L45 40 Z' fill='%23FDF3E6' stroke='%23FDF3E6' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Golos Text"; src: url("fonts/GolosText-VariableFont_wght.ttf") format("truetype"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-VariableFont_wght.ttf") format("truetype"); font-weight: 100 800; font-display: swap; }
+
+/* Цвета — роли из Color.kt приложения (палитры всех тем). */
+:root, [data-palette="warm"][data-bg="light"] {
+  color-scheme: light;
+  --accent: #C0562B; --accent-pressed: #A24521; --on-accent: #FFFFFF;
+  --text-primary: #251A13; --text-secondary: #7D6857; --icon-muted: #A89180;
+  --bg-top: #FDF9F2; --bg-bottom: #F7EEE2;
+  --surface: #FFFFFF; --sheet: #FCF7EE; --quiet: #F6EBDA; --quiet-text: #4E3A2D;
+  --groove: #ECDDCA; --divider: #482C1A17; --rail: #E8A97E;
+  --glow: #C0562B22;
+}
+[data-palette="warm"][data-bg="dark"], [data-palette="warm"][data-bg="black"] {
+  color-scheme: dark;
+  --accent: #E8A97E; --accent-pressed: #D58C60; --on-accent: #251A13;
+  --text-primary: #F5EADE; --text-secondary: #B8A18E; --icon-muted: #96806E;
+  --bg-top: #211A15; --bg-bottom: #17110D;
+  --surface: #433329; --sheet: #2B211A; --quiet: #31261E; --quiet-text: #D8C3AD;
+  --groove: #3A2D23; --divider: #F5EADE17; --rail: #986440;
+  --glow: #E8A97E1f;
+}
+[data-palette="cool"][data-bg="light"] {
+  color-scheme: light;
+  --accent: #2B7D8E; --accent-pressed: #24697A; --on-accent: #FFFFFF;
+  --text-primary: #16232B; --text-secondary: #5F727C; --icon-muted: #93A7AE;
+  --bg-top: #F8FBFC; --bg-bottom: #EDF4F5;
+  --surface: #FFFFFF; --sheet: #F6FAFB; --quiet: #EAF1F2; --quiet-text: #3D5058;
+  --groove: #DDE8EA; --divider: #16232B17; --rail: #9DBFC7;
+  --glow: #2B7D8E22;
+}
+[data-palette="cool"][data-bg="dark"], [data-palette="cool"][data-bg="black"] {
+  color-scheme: dark;
+  --accent: #4FB3C6; --accent-pressed: #3D97A9; --on-accent: #07141A;
+  --text-primary: #E8F1F3; --text-secondary: #8EA3AB; --icon-muted: #74898F;
+  --bg-top: #101B21; --bg-bottom: #0A1317;
+  --surface: #2A3B43; --sheet: #17242B; --quiet: #1C2A31; --quiet-text: #B6C7CD;
+  --groove: #22323A; --divider: #E8F1F317; --rail: #35707C;
+  --glow: #4FB3C61f;
+}
+/* Цвета логотипа — по иконке приложения, одинаковые в светлой и тёмной теме. */
+[data-palette="warm"] { --logo-a: #E37739; --logo-b: #AD4723; --logo-spine: #F6AE6E; }
+[data-palette="cool"] { --logo-a: #3A9AAD; --logo-b: #1F5E6B; --logo-spine: #8FD0DC; }
+/* Чёрный фон, как в приложении: меняется только фон, панели остаются тёмными. */
+/* Селектор из двух атрибутов — иначе правило палитры выше перебивает его по специфичности. */
+[data-palette][data-bg="black"] { --bg-top: #000000; --bg-bottom: #000000; --sheet: #0E0B09; --quiet: #1A1512; }
+[data-palette="cool"][data-bg="black"] { --sheet: #0A1013; --quiet: #141E23; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Golos Text", system-ui, sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-bottom);
+  background-image: linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 60%);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+img { display: block; max-width: 100%; }
+a { color: var(--accent); }
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .wrap { padding: 0 16px; } }
+
+/* ---------- Шапка ---------- */
+header.top {
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  background: color-mix(in srgb, var(--bg-top) 78%, transparent);
+  border-bottom: 1px solid var(--divider);
+}
+.top .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; color: var(--text-primary); }
+.brand svg { width: 32px; height: 32px; }
+nav.links { display: flex; gap: 22px; margin-left: auto; }
+nav.links a { color: var(--text-secondary); text-decoration: none; font-size: 15px; }
+nav.links a:hover { color: var(--text-primary); }
+@media (max-width: 860px) { nav.links { display: none; } }
+
+.switcher { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
+@media (max-width: 860px) { .switcher { margin-left: auto; } }
+.swatch {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0;
+  outline-offset: 2px;
+}
+.swatch[aria-pressed="true"] { border-color: var(--text-primary); }
+.swatch.warm { background: linear-gradient(135deg, #E8A97E 50%, #C0562B 50%); }
+.swatch.cool { background: linear-gradient(135deg, #4FB3C6 50%, #2B7D8E 50%); }
+.seg {
+  display: inline-flex; background: var(--quiet); border-radius: 999px; padding: 3px; margin-left: 4px;
+}
+.seg button {
+  border: 0; background: transparent; color: var(--text-secondary); cursor: pointer;
+  width: 30px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+}
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px #0002; }
+.seg svg { width: 16px; height: 16px; }
+
+/* ---------- Кнопки ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; font: inherit; font-weight: 600; font-size: 16px;
+  padding: 14px 22px; border-radius: 16px; text-decoration: none; cursor: pointer; border: 0;
+  transition: transform .15s, background-color .2s;
+}
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--accent-pressed); }
+.btn.quiet { background: var(--quiet); color: var(--quiet-text); }
+.btn svg { width: 20px; height: 20px; }
+
+/* ---------- Телефон ---------- */
+.phone {
+  position: relative; margin: 0;
+  width: var(--w, 290px); aspect-ratio: 1080 / 2400;
+  border-radius: calc(var(--w, 290px) * .13);
+  padding: calc(var(--w, 290px) * .03);
+  background: #0c0c0c;
+  box-shadow: 0 0 0 1.5px #ffffff14 inset, 0 30px 60px -20px #0008, 0 60px 120px -40px var(--glow);
+}
+.phone img {
+  width: 100%; height: 100%; object-fit: cover;
+  border-radius: calc(var(--w, 290px) * .105);
+  background: var(--bg-bottom);
+  transition: opacity .25s;
+}
+.phone img.fading { opacity: 0; }
+.phone::before { /* фронтальная камера */
+  content: ""; position: absolute; top: calc(var(--w, 290px) * .055); left: 50%; translate: -50% 0;
+  width: calc(var(--w, 290px) * .035); aspect-ratio: 1; border-radius: 50%; background: #000; z-index: 2;
+  box-shadow: 0 0 0 1px #222;
+}
+.phone { cursor: zoom-in; }
+
+/* ---------- Первый экран ---------- */
+.hero { padding: 72px 0 40px; position: relative; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
+.hero h1 { font-size: clamp(38px, 5.4vw, 64px); line-height: 1.05; letter-spacing: -.025em; margin: 0 0 22px; font-weight: 750; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lead { font-size: clamp(17px, 1.7vw, 20px); color: var(--text-secondary); max-width: 34em; margin: 0 0 32px; }
+.hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero .facts { display: flex; gap: 28px; margin-top: 44px; flex-wrap: wrap; }
+.hero .facts div { font-size: 14px; color: var(--text-secondary); }
+.hero .facts b { display: block; font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 26px; color: var(--text-primary); }
+.hero-phones { position: relative; height: 640px; }
+.hero-phones .phone { position: absolute; }
+.hero-phones .back { --w: 250px; right: 0; top: 40px; rotate: 6deg; opacity: .9; }
+.hero-phones .front { --w: 290px; left: 6%; top: 0; rotate: -3deg; z-index: 1; }
+.blob {
+  position: absolute; inset: -10% -20% auto auto; width: 620px; height: 620px; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--glow), transparent); pointer-events: none; z-index: -1;
+}
+@media (max-width: 900px) {
+  .hero { padding-top: 40px; }
+  .hero .wrap { grid-template-columns: 1fr; }
+  .hero-phones { height: 520px; max-width: 420px; width: 100%; margin: 0 auto; }
+  .hero-phones .front { --w: 230px; left: 0; }
+  .hero-phones .back { --w: 200px; }
+}
+@media (max-width: 400px) {
+  .hero-phones { height: 460px; }
+  .hero-phones .front { --w: 200px; }
+  .hero-phones .back { --w: 170px; }
+}
+
+/* ---------- Секции ---------- */
+section.block { padding: 110px 0; }
+@media (max-width: 700px) { section.block { padding: 72px 0; } }
+.eyebrow { font-family: "JetBrains Mono", monospace; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+h2 { font-size: clamp(30px, 3.8vw, 46px); line-height: 1.1; letter-spacing: -.02em; margin: 0 0 20px; font-weight: 720; }
+.sub { color: var(--text-secondary); font-size: 18px; max-width: 36em; margin: 0; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.split.flip > :first-child { order: 2; }
+@media (max-width: 900px) { .split, .split.flip { grid-template-columns: 1fr; gap: 40px; } .split.flip > :first-child { order: 0; } }
+.stage { display: flex; justify-content: center; position: relative; }
+
+/* Вкладки рядом с телефоном */
+.tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--quiet); padding: 4px; border-radius: 14px; margin: 28px 0 24px; }
+.tabs button {
+  font: inherit; font-size: 15px; border: 0; background: transparent; color: var(--text-secondary);
+  padding: 9px 16px; border-radius: 10px; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px #0002; }
+.tabpanel[hidden] { display: none; }
+.tabpanel p { margin: 0 0 14px; color: var(--text-secondary); font-size: 17px; }
+.tabpanel p b { color: var(--text-primary); font-weight: 600; }
+
+.points { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 18px; }
+.points li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+.points .ic { width: 36px; height: 36px; border-radius: 10px; background: var(--quiet); color: var(--accent); display: grid; place-items: center; }
+.points .ic svg { width: 20px; height: 20px; }
+.points b { display: block; font-weight: 600; }
+.points span { color: var(--text-secondary); font-size: 16px; }
+
+/* Дерево папок */
+.tree {
+  font-family: "JetBrains Mono", monospace; font-size: 14px; line-height: 1.85;
+  background: var(--sheet); border: 1px solid var(--divider); border-radius: 20px; padding: 22px 26px;
+  white-space: pre; overflow-x: auto; color: var(--text-secondary); margin-top: 28px;
+}
+.tree .book { color: var(--text-primary); }
+.tree .tag { color: var(--accent); }
+
+/* Откат при возобновлении */
+.rewind { margin-top: 32px; display: grid; gap: 10px; }
+.rewind .row { display: grid; grid-template-columns: 9.5em 1fr 7em; gap: 14px; align-items: center; font-size: 15px; }
+.rewind .row span:first-child { color: var(--text-secondary); }
+.rewind .bar { height: 8px; border-radius: 99px; background: var(--groove); overflow: hidden; }
+.rewind .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.in .rewind .bar i { width: var(--v); }
+.rewind .row span:last-child { font-family: "JetBrains Mono", monospace; text-align: right; }
+@media (max-width: 500px) { .rewind .row { grid-template-columns: 7.5em 1fr 5.5em; font-size: 13px; } }
+
+/* Карточки */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+.card { background: var(--sheet); border: 1px solid var(--divider); border-radius: 22px; padding: 26px; }
+.card h3 { margin: 14px 0 8px; font-size: 19px; }
+.card p { margin: 0; color: var(--text-secondary); font-size: 16px; }
+.card .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+.card .ic svg { width: 24px; height: 24px; }
+
+/* Галерея тем */
+.themes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-top: 48px; }
+.themes button { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 12px; border-radius: 24px; padding: 10px 0 14px; transition: background-color .2s; }
+.themes button:focus-visible { outline: 2px solid var(--accent); }
+.themes button:hover { background: var(--quiet); }
+.themes button[aria-pressed="true"] { background: var(--quiet); }
+.themes .phone { --w: 150px; cursor: pointer; transition: transform .25s; }
+.themes button:hover .phone { transform: translateY(-6px); }
+.themes small { font-size: 14px; color: var(--text-secondary); }
+.themes button[aria-pressed="true"] small { color: var(--text-primary); font-weight: 600; }
+@media (max-width: 1100px) { .themes { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .themes { grid-template-columns: repeat(2, 1fr); gap: 8px; } .themes .phone { --w: 130px; } }
+
+/* Карусель экранов */
+.slider { position: relative; margin-top: 30px; --sw: 240px; }
+@media (max-width: 600px) { .slider { --sw: 200px; } }
+.reel {
+  display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+  /* Лента с прокруткой обрезает всё, что выходит за её край, — в том числе
+     тень телефона. Запас снизу под тень, отрицательный margin его компенсирует. */
+  padding: 40px calc(50% - var(--sw) / 2) 130px;
+  margin-bottom: -100px;
+  cursor: grab; user-select: none; -webkit-user-select: none;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.reel::-webkit-scrollbar { display: none; }
+.reel.dragging { cursor: grabbing; scroll-snap-type: none; }
+.reel .item {
+  scroll-snap-align: center; flex: none; width: var(--sw); display: grid; justify-items: center;
+  transform: scale(var(--s, .78)); opacity: var(--o, .45); filter: saturate(var(--sat, .6));
+  transition: transform .12s linear, opacity .12s linear;
+  will-change: transform;
+}
+.reel .phone { --w: var(--sw); cursor: pointer; }
+.reel .item.active .phone { cursor: zoom-in; }
+.reel img { pointer-events: none; -webkit-user-drag: none; }
+.slider-bar { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 4px; }
+.dots { position: relative; z-index: 1; }
+.slider-bar .arrow {
+  width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer; flex: none;
+  background: var(--quiet); color: var(--text-primary); display: grid; place-items: center;
+  transition: background-color .2s, transform .15s, opacity .2s;
+}
+.slider-bar .arrow:hover { background: var(--accent); color: var(--on-accent); }
+.slider-bar .arrow:active { transform: scale(.92); }
+.slider-bar .arrow:disabled { opacity: .35; pointer-events: none; }
+.slider-bar .arrow svg { width: 22px; height: 22px; }
+.slider-caption { min-width: 13em; text-align: center; }
+.slider-caption b { display: block; font-size: 18px; font-weight: 600; }
+.slider-caption span { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--text-secondary); }
+.dots { display: flex; justify-content: center; gap: 6px; margin-top: 18px; flex-wrap: wrap; padding: 0 16px; }
+.dots button {
+  width: 8px; height: 8px; border-radius: 99px; border: 0; padding: 0; cursor: pointer;
+  background: var(--groove); transition: width .3s, background-color .3s;
+}
+.dots button[aria-current="true"] { width: 28px; background: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .reel .item { transition: none; } }
+
+/* Финал */
+.final { text-align: center; padding: 120px 0 100px; }
+.final .icon { width: 96px; height: 96px; margin: 0 auto 28px; filter: drop-shadow(0 18px 30px var(--glow)); }
+.final .sub { margin: 0 auto 34px; }
+.final .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.final .req { margin-top: 22px; font-size: 14px; color: var(--text-secondary); }
+
+footer { border-top: 1px solid var(--divider); padding: 30px 0 40px; color: var(--text-secondary); font-size: 14px; }
+footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+footer a { color: inherit; }
+.stack { display: flex; gap: 8px; flex-wrap: wrap; }
+.stack span { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--quiet); color: var(--quiet-text); }
+
+/* Появление при прокрутке */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s, transform .8s cubic-bezier(.2,.8,.2,1); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+  .rewind .bar i { transition: none; }
+}
+
+/* Просмотр скриншота */
+dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; }
+dialog.lightbox::backdrop { background: #000c; backdrop-filter: blur(6px); }
+dialog.lightbox img { height: min(88vh, 900px); width: auto; border-radius: 28px; }
+dialog.lightbox form { position: fixed; top: 16px; right: 16px; }
+dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff2; color: #fff; font-size: 22px; cursor: pointer; }
+</style>
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Логотип по иконке приложения: цвета зависят только от палитры, не от фона -->
+    <symbol id="logo" viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="var(--logo-a)"/>
+          <stop offset="1" stop-color="var(--logo-b)"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="15" fill="url(#logo-bg)"/>
+      <rect x="11" y="22" width="7" height="30" rx="2" fill="#FFF7EC"/>
+      <rect x="21" y="17" width="8" height="35" rx="2" fill="#FFF7EC"/>
+      <rect x="32" y="12" width="8" height="40" rx="2" fill="var(--logo-spine)"/>
+      <path d="M32 16.5h8M32 18.5h8M32 45.5h8M32 47.5h8" stroke="var(--logo-b)" stroke-width="1" opacity=".55"/>
+      <path d="M46 24 L56 32 L46 40 Z" fill="#FFF7EC" stroke="#FFF7EC" stroke-width="3" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-black" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 20h14"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path fill="currentColor" d="M3 6.5A2.5 2.5 0 0 1 5.5 4h4l2 2.5h7A2.5 2.5 0 0 1 21 9v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10V7.5a5 5 0 0 1 10 0V10h.5A1.5 1.5 0 0 1 19 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-8A1.5 1.5 0 0 1 6.5 10zm2 0h6V7.5a3 3 0 0 0-6 0z"/></symbol>
+    <symbol id="i-cloud-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 3l18 18M8 7.3A6 6 0 0 1 17.6 10 4 4 0 0 1 20 17M17 19H7a5 5 0 0 1-1.6-9.7"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 3h8l4 4v14H6z M14 3v4h4"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 11a8 8 0 0 0-14.5-4.5M4 13a8 8 0 0 0 14.5 4.5M5 3v4h4M19 21v-4h-4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M5 11a7 7 0 0 1 14 0v4M5 11v4M3 15h4v5H3zM17 15h4v5h-4z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+    <symbol id="i-chapter" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 12h16M4 12v-3M10 12v-3M15 12v-3M20 12v-3"/><circle cx="13" cy="12" r="3" fill="currentColor"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><svg><use href="#logo"/></svg>Аудиокниги</a>
+    <nav class="links" aria-label="Разделы">
+      <a href="#library">Библиотека</a>
+      <a href="#player">Плеер</a>
+      <a href="#sound">Звук</a>
+      <a href="#stats">Статистика</a>
+      <a href="#themes">Темы</a>
+    </nav>
+    <div class="switcher" role="group" aria-label="Оформление страницы">
+      <button class="swatch warm" data-set-palette="warm" aria-label="Тёплая палитра"></button>
+      <button class="swatch cool" data-set-palette="cool" aria-label="Холодная палитра"></button>
+      <div class="seg">
+        <button data-set-bg="light" aria-label="Светлый фон"><svg><use href="#i-sun"/></svg></button>
+        <button data-set-bg="dark" aria-label="Тёмный фон"><svg><use href="#i-moon"/></svg></button>
+        <button data-set-bg="black" aria-label="Чёрный фон"><svg><use href="#i-black"/></svg></button>
+      </div>
+    </div>
+  </div>
+</header>
+
 <main>
-
-  <div class="hero">
-    <img src="assets/icon.webp" alt="Значок приложения «Аудиокниги»" width="96" height="96">
-    <h1>Аудиокниги</h1>
-    <p>Слушайте аудиокниги из своей папки с удобным плеером</p>
+<!-- ============ Первый экран ============ -->
+<section class="hero">
+  <div class="blob"></div>
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Плеер аудиокниг для Android</p>
+      <h1>Ваши книги.<br>Ваши файлы.<br><em>Ничего лишнего.</em></h1>
+      <p class="lead">Покажите приложению папку с аудиокнигами — оно само найдёт книги, главы и обложки и запомнит, где вы остановились. Без аккаунта, без подписки и без интернета.</p>
+      <div class="cta">
+        <!-- Ссылка на APK: заменить href, когда появится релиз -->
+        <a class="btn primary" href="#download"><svg><use href="#i-download"/></svg>Скачать для Android</a>
+        <a class="btn quiet" href="#library">Посмотреть, как устроено</a>
+      </div>
+      <div class="facts">
+        <div><b>0</b>разрешений на интернет</div>
+        <div><b>7</b>аудиоформатов</div>
+        <div><b>6</b>вариантов оформления</div>
+      </div>
+    </div>
+    <div class="hero-phones">
+      <figure class="phone back"><img data-shot="library-grid" alt="Библиотека сеткой: обложки, авторы, прогресс и мини-плеер" fetchpriority="high"></figure>
+      <figure class="phone front"><img data-shot="player" alt="Плеер: большая обложка, шкала книги с отметками глав, шкала текущей главы, перемотка" fetchpriority="high"></figure>
+    </div>
   </div>
+</section>
 
-  <div class="card">
-    <p>Приложение воспроизводит аудиокниги, которые уже хранятся на вашем
-    устройстве. Выберите папку с книгами через системный интерфейс Android
-    и обновите библиотеку по кнопке. Приложение показывает книги и главы,
-    запоминает место прослушивания и продолжает воспроизведение при
-    выключенном экране.</p>
-
-    <p>В плеере доступны перемотка, управление скоростью, таймер сна
-    и эквалайзер. Книги можно просматривать в библиотеке и фильтровать
-    по состоянию, автору, актёру и собственным меткам.</p>
-
-    <p style="margin-bottom:0"><b>Приложение не предоставляет аудиокниги
-    и не загружает их из интернета.</b></p>
+<!-- ============ Библиотека ============ -->
+<section class="block" id="library">
+  <div class="wrap split">
+    <div class="reveal">
+      <p class="eyebrow">Библиотека</p>
+      <h2>Папка на телефоне —<br>это и есть библиотека</h2>
+      <p class="sub">Приложение обходит выбранную папку на любую глубину. Папка с аудиофайлами — книга. Папка с подпапками — автор или серия. Одиночный <span class="mono">.m4b</span> — тоже книга.</p>
+      <div class="tree" aria-label="Пример структуры папок">audiobooks/
+├── Толкин/
+│   ├── <span class="book">Властелин колец 1/</span>   <span class="tag">← книга</span>
+│   ├── <span class="book">Властелин колец 2/</span>   <span class="tag">← книга</span>
+│   └── <span class="book">Хоббит/</span>              <span class="tag">← книга</span>
+├── <span class="book">Дюна/</span>                    <span class="tag">← книга</span>
+└── <span class="book">Марсианин.m4b</span>            <span class="tag">← книга</span></div>
+      <div class="tabs" role="tablist" data-target="lib-phone">
+        <button role="tab" aria-selected="true" data-shot="library-grid" aria-controls="lib-1">Сетка</button>
+        <button role="tab" aria-selected="false" data-shot="library-list" aria-controls="lib-2">Список</button>
+        <button role="tab" aria-selected="false" data-shot="collection" aria-controls="lib-3">Коллекции</button>
+        <button role="tab" aria-selected="false" data-shot="library-filter" aria-controls="lib-4">Фильтр</button>
+      </div>
+      <div class="tabpanel" id="lib-1" role="tabpanel"><p><b>Крупные обложки в два столбца.</b> Вкладки «Начатое», «Новые», «Прослушанные» — и мини-плеер внизу, чтобы вернуться к книге одним касанием.</p></div>
+      <div class="tabpanel" id="lib-2" role="tabpanel" hidden><p><b>Список для большой библиотеки.</b> Автор, чтец, длительность и прогресс в одной строке.</p></div>
+      <div class="tabpanel" id="lib-3" role="tabpanel" hidden><p><b>Серии собираются в коллекции.</b> Семь томов «Гарри Поттера» — одна карточка: общий прогресс, 127 часов, кнопка «Продолжить» с того тома, где вы сейчас.</p></div>
+      <div class="tabpanel" id="lib-4" role="tabpanel" hidden><p><b>Фильтр по автору, чтецу и своим меткам.</b> Рядом с каждым значением — сколько у него книг. Хотите только Суханова — пожалуйста.</p></div>
+    </div>
+    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="lib-phone" data-shot="library-grid" alt="Экран библиотеки" loading="lazy"></figure></div>
   </div>
+</section>
 
-  <h2>Что умеет</h2>
+<!-- ============ Плеер ============ -->
+<section class="block" id="player">
+  <div class="wrap split flip">
+    <div class="reveal">
+      <p class="eyebrow">Плеер</p>
+      <h2>Две шкалы:<br>вся книга и текущая глава</h2>
+      <p class="sub">Верхняя шкала показывает, сколько осталось до конца книги, с отметками глав. Нижняя — где вы внутри главы. Нажмите на название главы — шкала раскроется в список, и переход нужно подтвердить: случайно не промахнётесь.</p>
+      <ul class="points">
+        <li><span class="ic"><svg><use href="#i-chapter"/></svg></span><div><b>Главы находятся сами</b><span>Из меток внутри <span class="mono">.m4b</span> и <span class="mono">.mp3</span>, из файлов в папке, а если разметки нет — книга делится на ровные части.</span></div></li>
+        <li><span class="ic"><svg><use href="#i-back"/></svg></span><div><b>Откат при возобновлении</b><span>Чем дольше пауза, тем дальше назад — чтобы вспомнить, на чём остановились:</span></div></li>
+      </ul>
+      <div class="rewind" aria-label="Величина отката в зависимости от паузы">
+        <div class="row"><span>меньше часа</span><div class="bar"><i style="--v:2%"></i></div><span>нет</span></div>
+        <div class="row"><span>1–5 часов</span><div class="bar"><i style="--v:15%"></i></div><span>1 мин</span></div>
+        <div class="row"><span>5–48 часов</span><div class="bar"><i style="--v:35%"></i></div><span>3 мин</span></div>
+        <div class="row"><span>до недели</span><div class="bar"><i style="--v:55%"></i></div><span>5 мин</span></div>
+        <div class="row"><span>больше недели</span><div class="bar"><i style="--v:100%"></i></div><span>к главе</span></div>
+      </div>
+    </div>
+    <div class="stage reveal">
+      <figure class="phone" style="--w:300px"><img id="player-phone" data-shot="player" alt="Экран плеера" loading="lazy"></figure>
+    </div>
+  </div>
+</section>
 
-  <ul class="features">
-    <li><b>Своя папка</b>
-      <span>Библиотека собирается из папки, которую вы выбрали сами. Аудиофайлы приложение не изменяет.</span></li>
-    <li><b>Память места</b>
-      <span>Позиция сохраняется по книге и переносится вместе с ней — рядом с книгой лежит файл с прогрессом.</span></li>
-    <li><b>Фоновое воспроизведение</b>
-      <span>Управление в уведомлении и на экране блокировки, книга играет при выключенном экране.</span></li>
-    <li><b>Главы</b>
-      <span>Главы из файлов <code>.m4b</code> и отдельные файлы книги — переход, перемотка, откат при возобновлении.</span></li>
-    <li><b>Скорость и таймер сна</b>
-      <span>Скорость воспроизведения и таймер, который можно завести заново встряхиванием.</span></li>
-    <li><b>Эквалайзер</b>
-      <span>Свои полосы частот и баланс — собственный обработчик звука, не системный.</span></li>
-    <li><b>Вкладки, метки и фильтр</b>
-      <span>Книги делятся по состоянию, фильтруются по автору, актёру и вашим собственным меткам.</span></li>
-    <li><b>Светлая и тёмная тема</b>
-      <span>Обе темы нарисованы отдельно, выбор — в настройках приложения.</span></li>
-  </ul>
+<!-- ============ Звук ============ -->
+<section class="block" id="sound">
+  <div class="wrap split">
+    <div class="reveal">
+      <p class="eyebrow">Звук</p>
+      <h2>Под голос чтеца,<br>а не под музыку</h2>
+      <p class="sub">Скорость, эквалайзер и таймер сна открываются прямо с экрана плеера. Скорость и эквалайзер можно задать каждой книге свои.</p>
+      <div class="tabs" role="tablist" data-target="sound-phone">
+        <button role="tab" aria-selected="true" data-shot="speed" aria-controls="snd-1">Скорость</button>
+        <button role="tab" aria-selected="false" data-shot="equalizer" aria-controls="snd-2">Эквалайзер</button>
+        <button role="tab" aria-selected="false" data-shot="sleep-timer" aria-controls="snd-3">Таймер сна</button>
+      </div>
+      <div class="tabpanel" id="snd-1" role="tabpanel"><p><b>От 0.25× до 4× с шагом 0.05.</b> Ползунок, точные кнопки «−» и «+» и готовые значения от 1.00× до 2.00×. Скорость у каждой книги своя: бодрый нон-фикшн на 1.8×, неторопливая классика на 1.2×.</p></div>
+      <div class="tabpanel" id="snd-2" role="tabpanel" hidden><p><b>Пять полос, баланс и усиление до +90 %.</b> Пресеты сделаны для речи: «Голос» убирает гул и добавляет разборчивости, «Ночь» поднимает середину на тихой громкости, «Без шипения» срезает свистящие у чтеца.</p><p>Эквалайзер свой, в конвейере плеера — частоты полос одинаковые на любом телефоне.</p></div>
+      <div class="tabpanel" id="snd-3" role="tabpanel" hidden><p><b>Засыпайте спокойно.</b> Перед остановкой звук плавно затихает. Не спите — встряхните телефон или нажмите любую кнопку, и таймер начнёт отсчёт заново.</p><p>Пока книга на паузе, таймер не тикает: книга, оставленная на ночь, не «доспит» без вас.</p></div>
+    </div>
+    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="sound-phone" data-shot="speed" alt="Настройка звука" loading="lazy"></figure></div>
+  </div>
+</section>
 
-  <figure>
-    <img src="assets/screen-settings.png" alt="Экран настроек приложения «Аудиокниги»">
-    <figcaption>Экран настроек</figcaption>
-  </figure>
+<!-- ============ Поведение ============ -->
+<section class="block" id="behaviour" style="padding-top:40px">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">Мелочи, которые важны</p>
+      <h2>Ни одной пропущенной фразы</h2>
+      <p class="sub">Музыкальные плееры приглушают звук, когда приходит уведомление. Для книги это значит — фраза пропала. Здесь всё иначе.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic"><svg><use href="#i-bell"/></svg></div><h3>Уведомление или навигатор</h3><p>Пауза, а потом книга сама продолжит — с шагом на три секунды назад.</p></div>
+      <div class="card reveal"><div class="ic"><svg><use href="#i-pause"/></svg></div><h3>Звонок или видео</h3><p>Пауза до тех пор, пока вы сами не нажмёте «Играть». Ничего не заиграет внезапно.</p></div>
+      <div class="card reveal"><div class="ic"><svg><use href="#i-phone"/></svg></div><h3>Наушники отключились</h3><p>Пауза. Книга не зазвучит на всю комнату через колонку, к которой только что подключился телефон.</p></div>
+    </div>
+  </div>
+</section>
 
-  <h2>Данные и приватность</h2>
+<!-- ============ Статистика ============ -->
+<section class="block" id="stats">
+  <div class="wrap split flip">
+    <div class="reveal">
+      <p class="eyebrow">Статистика</p>
+      <h2>Сколько вы на самом деле слушаете</h2>
+      <p class="sub">Минуты по дням, календарь активности, сравнение с прошлым месяцем и годом, лучший день, завершённые книги. Дневная цель и время, когда начинается ваш «день», — в настройках.</p>
+      <div class="tabs" role="tablist" data-target="stats-phone">
+        <button role="tab" aria-selected="true" data-shot="stats-week-filled" aria-controls="st-0">Неделя</button>
+        <button role="tab" aria-selected="false" data-shot="stats-month" aria-controls="st-1">Месяц</button>
+        <button role="tab" aria-selected="false" data-shot="stats-year" aria-controls="st-2">Год</button>
+      </div>
+      <div class="tabpanel" id="st-0" role="tabpanel"><p><b>Неделя на одном графике.</b> Столбец на каждый день и пунктир дневной цели — сразу видно, в какие дни дотянули. Рядом — серия дней без пропусков, среднее за день и сколько дней из семи цель выполнена.</p></div>
+      <div class="tabpanel" id="st-1" role="tabpanel" hidden><p><b>Календарь, который хочется заполнить.</b> Чем ярче клетка, тем больше слушали. Нажмите на день — внизу появятся книги, которые звучали в этот день.</p></div>
+      <div class="tabpanel" id="st-2" role="tabpanel" hidden><p><b>Год целиком.</b> Часы по месяцам, лучший месяц, среднее и все книги, дослушанные до конца.</p></div>
+    </div>
+    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="stats-phone" data-shot="stats-week-filled" alt="Статистика прослушивания" loading="lazy"></figure></div>
+  </div>
+</section>
 
-  <p class="note">Приложение не запрашивает у Android разрешение на доступ
-  в интернет. В нём нет рекламы и аналитики, а ваши книги, история
-  прослушивания и настройки никуда не отправляются.</p>
+<!-- ============ Файлы ============ -->
+<section class="block" id="files">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">Ваши файлы</p>
+      <h2>Приложение ничего у вас не забирает</h2>
+      <p class="sub">Нет облака, аккаунта и рекламы. Приложение видит только ту папку, которую вы ему показали, и не запрашивает доступ ко всей памяти телефона.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic"><svg><use href="#i-cloud-off"/></svg></div><h3>Без интернета</h3><p>У приложения нет разрешения на доступ в сеть. Совсем. Слушайте в самолёте, в метро, на даче.</p></div>
+      <div class="card reveal"><div class="ic"><svg><use href="#i-file"/></svg></div><h3>Аудиофайлы не меняются</h3><p>Ни теги, ни имена, ни папки. Свои названия и обложки приложение хранит в отдельном <span class="mono">book.json</span> рядом с книгой.</p></div>
+      <div class="card reveal"><div class="ic"><svg><use href="#i-sync"/></svg></div><h3>Прогресс едет вместе с книгой</h3><p>Позиция записывается в ту же папку. Перенесли книгу на новый телефон — продолжите с того же места.</p></div>
+    </div>
+  </div>
+</section>
 
-  <p>Подробности — в <a href="privacy.html">политике конфиденциальности</a>.</p>
+<!-- ============ Темы ============ -->
+<section class="block" id="themes">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">Оформление</p>
+      <h2>Тёплая или холодная. Светлая, тёмная или чёрная</h2>
+      <p class="sub">Две палитры и три фона — шесть сочетаний. Чёрный фон для OLED-экранов, чтобы ночью экран не светил в глаза. Нажмите на любой вариант — и эта страница переоденется вместе с ним.</p>
+    </div>
+    <div class="themes reveal" id="theme-grid"></div>
+  </div>
+</section>
 
+<!-- ============ Все экраны ============ -->
+<section class="block" id="screens" style="padding-bottom:40px">
+  <div class="wrap reveal">
+    <p class="eyebrow">Все экраны</p>
+    <h2>Посмотрите сами</h2>
+    <p class="sub">Настоящие скриншоты с телефона. Листайте стрелками или свайпом, нажмите на экран, чтобы увеличить.</p>
+  </div>
+  <div class="slider reveal" role="region" aria-roledescription="карусель" aria-label="Экраны приложения">
+    <div class="reel" id="reel" tabindex="0"></div>
+    <div class="slider-bar">
+      <button class="arrow" id="reel-prev" aria-label="Предыдущий экран"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="slider-caption" aria-live="polite"><b id="reel-title"></b><span id="reel-count"></span></div>
+      <button class="arrow" id="reel-next" aria-label="Следующий экран"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="dots" id="reel-dots"></div>
+  </div>
+</section>
+
+<!-- ============ Скачать ============ -->
+<section class="final" id="download">
+  <div class="wrap reveal">
+    <svg class="icon"><use href="#logo"/></svg>
+    <h2>Вернитесь к своей книге</h2>
+    <p class="sub">Бесплатно. Без рекламы, аккаунтов и подписок. Поддерживаются mp3, m4a, m4b, ogg, opus, flac и wav.</p>
+    <div class="cta">
+      <!-- Ссылка на APK: заменить href, когда появится релиз -->
+      <a class="btn primary" href="#download"><svg><use href="#i-download"/></svg>Скачать APK</a>
+    </div>
+    <p class="req">Android 8.0 и новее</p>
+  </div>
+</section>
 </main>
 
 <footer>
-  <p>«Аудиокниги» · <code>io.github.oasan.audiobookplayer</code></p>
-  <p><a href="privacy.html">Политика конфиденциальности</a></p>
+  <div class="wrap">
+    <span>Аудиокниги · 2026 · <a href="privacy.html">Политика конфиденциальности</a></span>
+    <div class="stack"><span>Kotlin</span><span>Jetpack Compose</span><span>Media3</span><span>Room</span><span>SAF</span></div>
+  </div>
 </footer>
 
+<dialog class="lightbox" id="lightbox">
+  <form method="dialog"><button aria-label="Закрыть">✕</button></form>
+  <img alt="">
+</dialog>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const THEMES = [
+    ["warm", "light", "Тёплая светлая"], ["warm", "dark", "Тёплая тёмная"], ["warm", "black", "Тёплая чёрная"],
+    ["cool", "light", "Холодная светлая"], ["cool", "dark", "Холодная тёмная"], ["cool", "black", "Холодная чёрная"],
+  ];
+  const REEL = [
+    ["player", "Плеер"], ["chapters", "Выбор главы"], ["library-grid", "Библиотека"], ["library-list", "Список"],
+    ["library-menu", "Меню"], ["library-filter", "Фильтр"], ["collection", "Коллекция"], ["collection-picker", "В коллекцию"],
+    ["speed", "Скорость"], ["equalizer", "Эквалайзер"], ["sleep-timer", "Таймер сна"], ["book-info", "О книге"],
+    ["book-edit", "Название и автор"], ["stats-week-filled", "Статистика: неделя"], ["stats-month", "Статистика: месяц"], ["stats-year", "Статистика: год"],
+    ["settings-library", "Настройки"], ["settings-playback", "Воспроизведение"], ["settings-appearance", "Оформление"],
+  ];
+  const src = (shot, p = root.dataset.palette, b = root.dataset.bg) => `img/${p}-${b}/${shot}.webp`;
+
+  // Предпочтение: сохранённое → системное
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem("abp-theme") || "{}"); } catch (e) {}
+  root.dataset.palette = saved.palette || "warm";
+  root.dataset.bg = saved.bg || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+  // Сетка тем: каждая карточка показывает свою тему, а не текущую
+  const grid = document.getElementById("theme-grid");
+  for (const [p, b, label] of THEMES) {
+    const btn = document.createElement("button");
+    btn.dataset.p = p; btn.dataset.b = b;
+    btn.innerHTML = `<figure class="phone"><img src="${src("player", p, b)}" alt="Плеер: ${label.toLowerCase()} тема" loading="lazy"></figure><small>${label}</small>`;
+    btn.addEventListener("click", () => apply(p, b));
+    grid.append(btn);
+  }
+
+  // Карусель всех экранов
+  const reel = document.getElementById("reel");
+  const dots = document.getElementById("reel-dots");
+  const items = REEL.map(([shot, label], i) => {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.setAttribute("aria-label", `${i + 1} из ${REEL.length}: ${label}`);
+    d.innerHTML = `<figure class="phone"><img data-shot="${shot}" alt="${label}" loading="lazy" draggable="false"></figure>`;
+    reel.append(d);
+    const dot = document.createElement("button");
+    dot.setAttribute("aria-label", label);
+    dot.addEventListener("click", () => go(i));
+    dots.append(dot);
+    return d;
+  });
+  let current = -1;
+  const centerOf = el => el.offsetLeft + el.offsetWidth / 2;
+  const go = i => {
+    i = Math.max(0, Math.min(items.length - 1, i));
+    reel.scrollTo({ left: centerOf(items[i]) - reel.clientWidth / 2, behavior: "smooth" });
+  };
+  // Масштаб и прозрачность каждого экрана зависят от расстояния до центра
+  const layout = () => {
+    const mid = reel.scrollLeft + reel.clientWidth / 2;
+    const step = items[0].offsetWidth;
+    let best = 0, bestD = Infinity;
+    items.forEach((el, i) => {
+      const d = Math.abs(centerOf(el) - mid) / step;
+      if (d < bestD) { bestD = d; best = i; }
+      const t = Math.min(d, 2) / 2;
+      el.style.setProperty("--s", (1 - t * .3).toFixed(3));
+      el.style.setProperty("--o", (1 - Math.min(d, 1.6) * .38).toFixed(3));
+      el.style.setProperty("--sat", (1 - t * .5).toFixed(3));
+    });
+    if (best !== current) {
+      current = best;
+      items.forEach((el, i) => el.classList.toggle("active", i === best));
+      [...dots.children].forEach((b, i) => b.setAttribute("aria-current", i === best));
+      document.getElementById("reel-title").textContent = REEL[best][1];
+      document.getElementById("reel-count").textContent = `${String(best + 1).padStart(2, "0")} / ${String(REEL.length).padStart(2, "0")}`;
+      document.getElementById("reel-prev").disabled = best === 0;
+      document.getElementById("reel-next").disabled = best === items.length - 1;
+    }
+  };
+  let raf = 0;
+  reel.addEventListener("scroll", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); }, { passive: true });
+  addEventListener("resize", layout);
+  document.getElementById("reel-prev").addEventListener("click", () => go(current - 1));
+  document.getElementById("reel-next").addEventListener("click", () => go(current + 1));
+  reel.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { e.preventDefault(); go(current + 1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); go(current - 1); }
+  });
+
+  // Перетаскивание мышью; на телефоне работает обычный свайп
+  let drag = null;
+  reel.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    drag = { x: e.clientX, left: reel.scrollLeft, moved: false };
+  });
+  addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; reel.classList.add("dragging"); }
+    if (drag.moved) reel.scrollLeft = drag.left - dx;
+  });
+  addEventListener("pointerup", e => {
+    if (!drag) return;
+    const moved = drag.moved, dx = e.clientX - drag.x;
+    drag = null;
+    if (!moved) return;
+    reel.classList.remove("dragging");
+    // Короткий рывок листает на один экран, длинный — к ближайшему
+    go(Math.abs(dx) > 40 && Math.abs(dx) < items[0].offsetWidth / 2 ? current + (dx < 0 ? 1 : -1) : current);
+    suppressClickUntil = performance.now() + 100;
+  });
+  let suppressClickUntil = 0;
+  reel.addEventListener("click", e => { if (performance.now() < suppressClickUntil) e.stopPropagation(); }, true);
+
+  // Нажатие на соседний экран листает к нему, на центральный — увеличивает
+  reel.addEventListener("click", e => {
+    const item = e.target.closest(".item");
+    if (!item) return;
+    const i = items.indexOf(item);
+    if (i !== current) { e.stopPropagation(); go(i); }
+  });
+  // Начинаем с третьего экрана, чтобы соседи были видны с обеих сторон
+  requestAnimationFrame(() => {
+    reel.scrollLeft = centerOf(items[2]) - reel.clientWidth / 2;
+    layout();
+  });
+
+  function paint() {
+    document.querySelectorAll("img[data-shot]").forEach(img => {
+      const next = src(img.dataset.shot);
+      if (img.getAttribute("src") !== next) img.setAttribute("src", next);
+    });
+    document.querySelectorAll("[data-set-palette]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setPalette === root.dataset.palette));
+    document.querySelectorAll("[data-set-bg]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setBg === root.dataset.bg));
+    grid.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === root.dataset.palette && b.dataset.b === root.dataset.bg));
+  }
+  function apply(p, b) {
+    root.dataset.palette = p; root.dataset.bg = b;
+    try { localStorage.setItem("abp-theme", JSON.stringify({ palette: p, bg: b })); } catch (e) {}
+    paint();
+  }
+  document.querySelectorAll("[data-set-palette]").forEach(b => b.addEventListener("click", () => apply(b.dataset.setPalette, root.dataset.bg)));
+  document.querySelectorAll("[data-set-bg]").forEach(b => b.addEventListener("click", () => apply(root.dataset.palette, b.dataset.setBg)));
+  paint();
+
+  // Вкладки: меняют текст и скриншот в телефоне рядом
+  document.querySelectorAll(".tabs").forEach(list => {
+    const img = document.getElementById(list.dataset.target);
+    const tabs = [...list.querySelectorAll("[role=tab]")];
+    const select = tab => {
+      tabs.forEach(t => {
+        const on = t === tab;
+        t.setAttribute("aria-selected", on);
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+      });
+      img.classList.add("fading");
+      setTimeout(() => { img.dataset.shot = tab.dataset.shot; img.src = src(tab.dataset.shot); img.classList.remove("fading"); }, 180);
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => select(t));
+      t.addEventListener("keydown", e => {
+        const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+        if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); select(n); }
+      });
+    });
+  });
+
+  // Увеличение скриншота
+  const box = document.getElementById("lightbox");
+  document.addEventListener("click", e => {
+    const fig = e.target.closest(".phone");
+    if (!fig || fig.closest("#theme-grid")) return;
+    const img = fig.querySelector("img");
+    box.querySelector("img").src = `screens/${root.dataset.palette}-${root.dataset.bg}/${img.dataset.shot}.png`;
+    box.querySelector("img").alt = img.alt;
+    box.showModal();
+  });
+  box.addEventListener("click", e => { if (e.target === box) box.close(); });
+
+  // Появление при прокрутке
+  const io = new IntersectionObserver(entries => entries.forEach(en => {
+    if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+  }), { threshold: .15 });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+})();
+</script>
 </body>
 </html>
