@@ -119,8 +119,6 @@ nav.links a:hover { color: var(--text-primary); }
 .btn.primary:hover { background: var(--accent-pressed); }
 .btn.quiet { background: var(--quiet); color: var(--quiet-text); }
 .btn svg { width: 20px; height: 20px; }
-.btn.soon, .btn.soon:hover { opacity: .55; cursor: default; background: var(--accent); }
-.btn.soon:active { transform: none; }
 
 /* ---------- Телефон ---------- */
 .phone {
@@ -392,8 +390,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
       <h1>Ваши книги.<br>Ваши файлы.<br><em>Ничего лишнего.</em></h1>
       <p class="lead">Покажите приложению папку с аудиокнигами — оно само найдёт книги, главы и обложки и запомнит, где вы остановились. Без аккаунта, без подписки и без интернета.</p>
       <div class="cta">
-        <!-- Когда приложение появится в Google Play: href="https://play.google.com/store/apps/details?id=io.github.oasan.audiobookplayer" и текст «Скачать в Google Play» -->
-        <a class="btn primary" href="#download"><svg><use href="#i-download"/></svg>Скоро в Google Play</a>
+        <a class="btn primary" href="https://github.com/oasan/audiobookplayer-site/releases/latest/download/audiobookplayer.apk"><svg aria-hidden="true"><use href="#i-download"/></svg>Скачать APK</a>
         <a class="btn quiet" href="#library">Посмотреть, как устроено</a>
       </div>
       <div class="facts">
@@ -572,11 +569,10 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
     <h2>Вернитесь к своей книге</h2>
     <p class="sub">Бесплатно. Без рекламы, аккаунтов и подписок. Поддерживаются mp3, m4a, m4b, ogg, opus, flac и wav.</p>
     <div class="cta">
-      <!-- Когда приложение появится в Google Play: заменить на
-           <a class="btn primary" href="https://play.google.com/store/apps/details?id=io.github.oasan.audiobookplayer"><svg><use href="#i-download"/></svg>Скачать в Google Play</a> -->
-      <span class="btn primary soon" aria-disabled="true"><svg><use href="#i-download"/></svg>Скоро в Google Play</span>
+      <a class="btn primary" href="https://github.com/oasan/audiobookplayer-site/releases/latest/download/audiobookplayer.apk"><svg aria-hidden="true"><use href="#i-download"/></svg>Скачать APK</a>
     </div>
     <p class="req">Android 8.0 и новее</p>
+    <p class="req">Откройте скачанный APK и разрешите установку приложений из браузера, если Android попросит.</p>
   </div>
 </section>
 </main>
