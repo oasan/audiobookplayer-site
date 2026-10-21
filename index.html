@@ -762,7 +762,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
     const fig = e.target.closest(".phone");
     if (!fig || fig.closest("#theme-grid")) return;
     const img = fig.querySelector("img");
-    box.querySelector("img").src = `screens/${root.dataset.palette}-${root.dataset.bg}/${img.dataset.shot}.png`;
+    box.querySelector("img").src = img.currentSrc || img.src;
     box.querySelector("img").alt = img.alt;
     box.showModal();
   });
