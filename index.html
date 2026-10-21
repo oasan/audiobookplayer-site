@@ -66,6 +66,7 @@ body {
   -webkit-font-smoothing: antialiased;
   line-height: 1.55;
   overflow-x: hidden;
+  overflow-x: clip;
 }
 img { display: block; max-width: 100%; }
 a { color: var(--accent); }
@@ -146,8 +147,11 @@ nav.links a:hover { color: var(--text-primary); }
 .phone { cursor: zoom-in; }
 
 /* ---------- Первый экран ---------- */
-.hero { padding: 72px 0 40px; position: relative; }
+/* overflow-x: clip — подсветка .blob не должна давать горизонтальную прокрутку */
+.hero { padding: 72px 0 40px; position: relative; overflow-x: clip; }
 .hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
+/* Без min-width: 0 колонка сетки растягивается по самому широкому содержимому (дерево папок) */
+.hero .wrap > *, .split > * { min-width: 0; }
 .hero h1 { font-size: clamp(38px, 5.4vw, 64px); line-height: 1.05; letter-spacing: -.025em; margin: 0 0 22px; font-weight: 750; }
 .hero h1 em { font-style: normal; color: var(--accent); }
 .hero .lead { font-size: clamp(17px, 1.7vw, 20px); color: var(--text-secondary); max-width: 34em; margin: 0 0 32px; }
@@ -170,6 +174,12 @@ nav.links a:hover { color: var(--text-primary); }
   .hero-phones .front { --w: 230px; left: 0; }
   .hero-phones .back { --w: 200px; }
 }
+@media (max-width: 600px) {
+  .hero .cta { justify-content: center; }
+  .hero .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 36px; text-align: center; }
+  .hero .facts div { font-size: 13px; line-height: 1.35; }
+  .hero .facts b { font-size: 24px; margin-bottom: 4px; }
+}
 @media (max-width: 400px) {
   .hero-phones { height: 460px; }
   .hero-phones .front { --w: 200px; }
@@ -185,8 +195,19 @@ h2 { font-size: clamp(30px, 3.8vw, 46px); line-height: 1.1; letter-spacing: -.02
 
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
 .split.flip > :first-child { order: 2; }
-@media (max-width: 900px) { .split, .split.flip { grid-template-columns: 1fr; gap: 40px; } .split.flip > :first-child { order: 0; } }
 .stage { display: flex; justify-content: center; position: relative; }
+.stage .phone { --w: 300px; }
+
+/* На телефоне скриншот оказывается под текстом, и вкладки уходят с экрана.
+   Колонка блоком, а не сеткой, а текстовая часть с вкладками — display: contents:
+   так вкладки и телефон лежат в одном контейнере, и вкладки прилипают
+   к шапке, пока телефон на экране. */
+@media (max-width: 900px) {
+  .split { display: block; }
+  .split > .stage { margin-top: 40px; }
+  .split > div:has(> .tabs) { display: contents; }
+  .stage .phone { --w: min(300px, calc((100svh - 150px) * .45)); }
+}
 
 /* Вкладки рядом с телефоном */
 .tabs { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--quiet); padding: 4px; border-radius: 14px; margin: 28px 0 24px; }
@@ -195,6 +216,10 @@ h2 { font-size: clamp(30px, 3.8vw, 46px); line-height: 1.1; letter-spacing: -.02
   padding: 9px 16px; border-radius: 10px; cursor: pointer;
 }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px #0002; }
+@media (max-width: 900px) {
+  .tabs { display: flex; flex-wrap: nowrap; position: sticky; top: 72px; z-index: 10; box-shadow: 0 8px 20px -10px #0005; }
+  .tabs button { flex: 1 1 auto; white-space: nowrap; padding: 9px 8px; font-size: 14px; }
+}
 .tabpanel[hidden] { display: none; }
 .tabpanel p { margin: 0 0 14px; color: var(--text-secondary); font-size: 17px; }
 .tabpanel p b { color: var(--text-primary); font-weight: 600; }
@@ -212,6 +237,7 @@ h2 { font-size: clamp(30px, 3.8vw, 46px); line-height: 1.1; letter-spacing: -.02
   background: var(--sheet); border: 1px solid var(--divider); border-radius: 20px; padding: 22px 26px;
   white-space: pre; overflow-x: auto; color: var(--text-secondary); margin-top: 28px;
 }
+@media (max-width: 600px) { .tree { font-size: 13px; padding: 18px; } }
 .tree .book { color: var(--text-primary); }
 .tree .tag { color: var(--accent); }
 
@@ -227,12 +253,18 @@ h2 { font-size: clamp(30px, 3.8vw, 46px); line-height: 1.1; letter-spacing: -.02
 
 /* Карточки */
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 48px; }
-@media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
 .card { background: var(--sheet); border: 1px solid var(--divider); border-radius: 22px; padding: 26px; }
 .card h3 { margin: 14px 0 8px; font-size: 19px; }
 .card p { margin: 0; color: var(--text-secondary); font-size: 16px; }
 .card .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
 .card .ic svg { width: 24px; height: 24px; }
+/* В одну колонку: значок слева от заголовка, текст под ними */
+@media (max-width: 900px) {
+  .cards { grid-template-columns: 1fr; }
+  .card { display: grid; grid-template-columns: 44px 1fr; column-gap: 14px; align-items: center; padding: 22px; }
+  .card h3 { margin: 0; line-height: 1.25; }
+  .card p { grid-column: 1 / -1; margin-top: 12px; }
+}
 
 /* Галерея тем */
 .themes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-top: 48px; }
@@ -317,11 +349,27 @@ footer a { color: inherit; }
 }
 
 /* Просмотр скриншота */
-dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; }
-dialog.lightbox::backdrop { background: #000c; backdrop-filter: blur(6px); }
-dialog.lightbox img { height: min(88vh, 900px); width: auto; border-radius: 28px; }
+dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; overflow: visible; color: #fff; }
+dialog.lightbox::backdrop { background: #000d; backdrop-filter: blur(6px); }
+html:has(dialog.lightbox[open]) { overflow: hidden; }
+dialog.lightbox figure { margin: 0; display: grid; justify-items: center; gap: 14px; }
+/* dvh, а не vh: на телефоне vh не учитывает панели браузера, и снимок обрезался */
+dialog.lightbox img {
+  width: auto; height: auto; max-width: 92vw; max-height: min(80dvh, 900px); border-radius: 28px;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-user-drag: none;
+}
+dialog.lightbox figcaption { text-align: center; font-size: 15px; font-weight: 600; }
+dialog.lightbox figcaption span { font-family: "JetBrains Mono", monospace; font-weight: 400; font-size: 13px; opacity: .65; margin-left: 10px; }
 dialog.lightbox form { position: fixed; top: 16px; right: 16px; }
-dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff2; color: #fff; font-size: 22px; cursor: pointer; }
+dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff2; color: #fff; font-size: 22px; cursor: pointer; display: grid; place-items: center; }
+dialog.lightbox .nav { position: fixed; top: 50%; translate: 0 -50%; width: 52px; height: 52px; transition: opacity .2s; }
+dialog.lightbox .nav:disabled { opacity: .25; cursor: default; }
+dialog.lightbox .nav svg { width: 24px; height: 24px; }
+dialog.lightbox .prev { left: 20px; }
+dialog.lightbox .next { right: 20px; }
+/* Одиночный снимок — без стрелок и счётчика; на телефоне листают свайпом */
+dialog.lightbox:not(.multi) .nav, dialog.lightbox:not(.multi) figcaption span { display: none; }
+@media (max-width: 700px) { dialog.lightbox .nav { display: none; } }
 </style>
 </head>
 <body>
@@ -433,7 +481,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
       <div class="tabpanel" id="lib-3" role="tabpanel" hidden><p><b>Серии собираются в коллекции.</b> Семь томов «Гарри Поттера» — одна карточка: общий прогресс, 127 часов, кнопка «Продолжить» с того тома, где вы сейчас.</p></div>
       <div class="tabpanel" id="lib-4" role="tabpanel" hidden><p><b>Фильтр по автору, чтецу и своим меткам.</b> Рядом с каждым значением — сколько у него книг. Хотите только Суханова — пожалуйста.</p></div>
     </div>
-    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="lib-phone" data-shot="library-grid" alt="Экран библиотеки" loading="lazy"></figure></div>
+    <div class="stage reveal"><figure class="phone"><img id="lib-phone" data-shot="library-grid" alt="Экран библиотеки" loading="lazy"></figure></div>
   </div>
 </section>
 
@@ -457,7 +505,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
       </div>
     </div>
     <div class="stage reveal">
-      <figure class="phone" style="--w:300px"><img id="player-phone" data-shot="player" alt="Экран плеера" loading="lazy"></figure>
+      <figure class="phone"><img id="player-phone" data-shot="player" alt="Экран плеера" loading="lazy"></figure>
     </div>
   </div>
 </section>
@@ -478,7 +526,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
       <div class="tabpanel" id="snd-2" role="tabpanel" hidden><p><b>Пять полос, баланс и усиление до +90 %.</b> Пресеты сделаны для речи: «Голос» убирает гул и добавляет разборчивости, «Ночь» поднимает середину на тихой громкости, «Без шипения» срезает свистящие у чтеца.</p><p>Эквалайзер свой, в конвейере плеера — частоты полос одинаковые на любом телефоне.</p></div>
       <div class="tabpanel" id="snd-3" role="tabpanel" hidden><p><b>Засыпайте спокойно.</b> Перед остановкой звук плавно затихает. Не спите — встряхните телефон или нажмите любую кнопку, и таймер начнёт отсчёт заново.</p><p>Пока книга на паузе, таймер не тикает: книга, оставленная на ночь, не «доспит» без вас.</p></div>
     </div>
-    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="sound-phone" data-shot="speed" alt="Настройка звука" loading="lazy"></figure></div>
+    <div class="stage reveal"><figure class="phone"><img id="sound-phone" data-shot="speed" alt="Настройка звука" loading="lazy"></figure></div>
   </div>
 </section>
 
@@ -514,7 +562,7 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
       <div class="tabpanel" id="st-1" role="tabpanel" hidden><p><b>Календарь, который хочется заполнить.</b> Чем ярче клетка, тем больше слушали. Нажмите на день — внизу появятся книги, которые звучали в этот день.</p></div>
       <div class="tabpanel" id="st-2" role="tabpanel" hidden><p><b>Год целиком.</b> Часы по месяцам, лучший месяц, среднее и все книги, дослушанные до конца.</p></div>
     </div>
-    <div class="stage reveal"><figure class="phone" style="--w:300px"><img id="stats-phone" data-shot="stats-week-filled" alt="Статистика прослушивания" loading="lazy"></figure></div>
+    <div class="stage reveal"><figure class="phone"><img id="stats-phone" data-shot="stats-week-filled" alt="Статистика прослушивания" loading="lazy"></figure></div>
   </div>
 </section>
 
@@ -586,9 +634,11 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
   </div>
 </footer>
 
-<dialog class="lightbox" id="lightbox">
+<dialog class="lightbox" id="lightbox" aria-label="Просмотр экрана">
   <form method="dialog"><button aria-label="Закрыть">✕</button></form>
-  <img alt="">
+  <button class="nav prev" aria-label="Предыдущий экран"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="nav next" aria-label="Следующий экран"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+  <figure><img alt="" draggable="false"><figcaption><b></b><span></span></figcaption></figure>
 </dialog>
 
 <script>
@@ -756,17 +806,101 @@ dialog.lightbox button { width: 44px; height: 44px; border-radius: 50%; border: 
     });
   });
 
-  // Увеличение скриншота
+  // Увеличение скриншота. Снимки одной группы — вкладки раздела, вся карусель,
+  // пара телефонов на первом экране — листаются стрелками, клавишами и свайпом.
+  const LABELS = Object.fromEntries(REEL);
   const box = document.getElementById("lightbox");
+  const boxImg = box.querySelector("img");
+  const prevBtn = box.querySelector(".prev"), nextBtn = box.querySelector(".next");
+  const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let lb = null, busy = false;
+
+  // shots — имена снимков группы, i — открытый, onMove — синхронизация с самой страницей
+  const groupOf = fig => {
+    const img = fig.querySelector("img");
+    if (fig.closest("#reel")) return { shots: REEL.map(r => r[0]), i: current, onMove: go };
+    const list = document.querySelector(`.tabs[data-target="${img.id}"]`);
+    if (img.id && list) {
+      const tabs = [...list.querySelectorAll("[role=tab]")];
+      return {
+        shots: tabs.map(t => t.dataset.shot),
+        i: tabs.findIndex(t => t.getAttribute("aria-selected") === "true"),
+        onMove: i => tabs[i].click(),
+      };
+    }
+    const hero = fig.closest(".hero-phones");
+    if (hero) {
+      const shots = [".front", ".back"].map(s => hero.querySelector(`${s} img`).dataset.shot);
+      return { shots, i: shots.indexOf(img.dataset.shot) };
+    }
+    return { shots: [img.dataset.shot], i: 0 };
+  };
+  const show = () => {
+    const shot = lb.shots[lb.i];
+    boxImg.src = src(shot);
+    boxImg.alt = LABELS[shot] || "";
+    box.querySelector("figcaption b").textContent = LABELS[shot] || "";
+    box.querySelector("figcaption span").textContent = `${lb.i + 1} / ${lb.shots.length}`;
+    prevBtn.disabled = lb.i === 0;
+    nextBtn.disabled = lb.i === lb.shots.length - 1;
+  };
+  // Возврат на место после свайпа, которого не хватило для перелистывания
+  const settle = () => {
+    const from = boxImg.style.translate;
+    boxImg.style.translate = "";
+    if (from && motion) boxImg.animate([{ translate: from }, { translate: "0 0" }], { duration: 180, easing: "ease-out" });
+  };
+  const step = async d => {
+    const n = lb.i + d;
+    if (busy || n < 0 || n >= lb.shots.length) return settle();
+    busy = true;
+    lb.i = n;
+    lb.onMove?.(n);
+    const out = boxImg.animate({ translate: `${-d * 80}px 0`, opacity: 0 }, { duration: motion ? 140 : 0, easing: "ease-in", fill: "forwards" });
+    await out.finished;
+    show();
+    out.cancel();
+    boxImg.style.translate = "";
+    if (motion) boxImg.animate([{ translate: `${d * 80}px 0`, opacity: 0 }, { translate: "0 0", opacity: 1 }], { duration: 200, easing: "ease-out" });
+    busy = false;
+  };
+
   document.addEventListener("click", e => {
     const fig = e.target.closest(".phone");
-    if (!fig || fig.closest("#theme-grid")) return;
-    const img = fig.querySelector("img");
-    box.querySelector("img").src = img.currentSrc || img.src;
-    box.querySelector("img").alt = img.alt;
+    if (!fig || fig.closest("#theme-grid") || fig.closest("#lightbox")) return;
+    lb = groupOf(fig);
+    box.classList.toggle("multi", lb.shots.length > 1);
+    show();
     box.showModal();
   });
   box.addEventListener("click", e => { if (e.target === box) box.close(); });
+  prevBtn.addEventListener("click", () => step(-1));
+  nextBtn.addEventListener("click", () => step(1));
+  box.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+  });
+
+  // Свайп: снимок едет за пальцем; у края группы — с сопротивлением
+  let swipe = null;
+  boxImg.addEventListener("pointerdown", e => {
+    if (lb.shots.length < 2 || busy) return;
+    swipe = { x: e.clientX, id: e.pointerId };
+    boxImg.setPointerCapture(e.pointerId);
+  });
+  boxImg.addEventListener("pointermove", e => {
+    if (swipe?.id !== e.pointerId) return;
+    const dx = e.clientX - swipe.x;
+    const open = dx < 0 ? lb.i < lb.shots.length - 1 : lb.i > 0;
+    boxImg.style.translate = `${open ? dx : dx / 3}px 0`;
+  });
+  boxImg.addEventListener("pointerup", e => {
+    if (swipe?.id !== e.pointerId) return;
+    const dx = e.clientX - swipe.x;
+    swipe = null;
+    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1); else settle();
+  });
+  boxImg.addEventListener("pointercancel", () => { swipe = null; settle(); });
 
   // Появление при прокрутке
   const io = new IntersectionObserver(entries => entries.forEach(en => {
